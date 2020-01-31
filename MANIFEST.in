@@ -1,0 +1,2 @@
+recursive-include INGInious-autoevaluation/templates/ *
+recursive-include INGInious-autoevaluation/static/ *

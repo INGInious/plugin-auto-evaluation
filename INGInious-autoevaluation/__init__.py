@@ -19,12 +19,17 @@
 
 """ A plugin that allow students to autoevaluate their work """
 
+import os
+import web
+
+from inginious.frontend.pages.utils import INGIniousAuthPage
+
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
 
-def add_menu(course):  # pylint: disable=unused-argument
-    """ Add an item in course menu """
-    return 'Auto-Evaluation', '<i class="fa fa-bar-chart"></i>&nbsp; Auto-Evaluation'
+def course_menu(course, template_helper):
+    """ Displays the link to the board on the course page, if the plugin is activated for this course """
+    return str(template_helper.get_custom_renderer(PATH_TO_PLUGIN + '/templates/', layout=False).course_menu(course))
 
 
 class StaticMockPage(object):
@@ -41,8 +46,16 @@ class StaticMockPage(object):
     def POST(self, path):
         return self.GET(path)
 
+
+class EvaluationBoardCourse(INGIniousAuthPage):
+    def GET_AUTH(self, courseid):
+        course = self.course_factory.get_course(courseid)
+        return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/").autoevaluation_index(course)
+
+
 def init(plugin_manager, _, _2, config):
     """ Init the plugin """
-
-    plugin_manager.add_page('/plugins/reporting/static/(.+)', StaticMockPage)
-    plugin_manager.add_hook('course_menu', add_menu)
+    page_pattern_course = r'/evaluation/([a-z0-9A-Z\-_]+)'
+    plugin_manager.add_page(page_pattern_course, EvaluationBoardCourse)
+    plugin_manager.add_page('/plugins/evaluation/static/(.+)', StaticMockPage)
+    plugin_manager.add_hook('course_menu', course_menu)

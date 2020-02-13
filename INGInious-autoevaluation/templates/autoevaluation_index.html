@@ -1,0 +1,26 @@
+$def with(course)
+$var title: AutoEvaluation
+
+$var Column: $:template_helper.call('course_menu',course=course,current='AutoEvaluation')
+
+$#
+$# This file is part of AutoEvaluation plugin. See the LICENSE and the COPYRIGHTS files for
+$# more information about the licensing of this file.
+$#
+
+$def NavbarF():
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="$get_homepath()/course/$course.get_id()">$course.get_name(user_manager.session_language())</a></li>
+            <li class="breadcrumb-item active"><a href="#"><i class="fa fa-rocket"></i> Evaluation <span class="sr-only">(current)</span></a></li>
+        </ol>
+    </nav>
+$var Navbar: $:NavbarF()
+
+<h1>AutoEvaluation -Overview</h1>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-4">Petit</div>
+        <div class="col-8">Grand</div>
+    </div>
+</div>

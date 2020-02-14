@@ -1,7 +1,7 @@
-$def with(course)
+$def with(course,personnal_grade,all_grade)
 $var title: AutoEvaluation
 
-$var Column: $:template_helper.call('course_menu',course=course,current='AutoEvaluation')
+$var Column: $:template_helper.call('course_menu',course=course)
 
 $#
 $# This file is part of AutoEvaluation plugin. See the LICENSE and the COPYRIGHTS files for
@@ -17,10 +17,19 @@ $def NavbarF():
     </nav>
 $var Navbar: $:NavbarF()
 
-<h1>AutoEvaluation -Overview</h1>
+<h1>AutoEvaluation - Overview</h1>
 <div class="container-fluid">
     <div class="row">
-        <div class="col-4">Petit</div>
-        <div class="col-8">Grand</div>
+        <div class="col-4">
+            <p>Ma moyenne: $personnal_grade %</p>
+            <div class="progress">
+              <div class="progress-bar" style="width:$personnal_grade%"></div>
+            </div>
+            <p>Moyenne de la classe : $all_grade %</p>
+            <div class="progress">
+              <div class="progress-bar" style="width:$all_grade%"></div>
+            </div>
+        </div>
+        <div class="col-8">Grand </div>
     </div>
 </div>

@@ -49,8 +49,33 @@ class StaticMockPage(object):
 
 class EvaluationBoardCourse(INGIniousAuthPage):
     def GET_AUTH(self, courseid):
+
+        username = self.user_manager.session_username()
         course = self.course_factory.get_course(courseid)
-        return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/").autoevaluation_index(course)
+        tasks = course.get_tasks()
+        tasks_score = [0.0, 0.0, 0.0]
+
+        user_tasks = self.database.user_tasks.find(
+            {"username": username, "courseid": course.get_id(), "taskid": {"$in": list(tasks.keys())}})
+        list_stud = (self.user_manager.get_course_registered_users(course, False))
+        nstud = len(list_stud)
+        all_stud_tasks = self.database.user_tasks.find(
+            {"username":{"$in":list_stud},"courseid": course.get_id(), "taskid": {"$in": list(tasks.keys())}})
+
+        for taskid, task in tasks.items():
+            tasks_score[1] += task.get_grading_weight()
+
+        for user_task in user_tasks:
+            weighted_score = user_task["grade"] * tasks[user_task["taskid"]].get_grading_weight()
+            tasks_score[0] += weighted_score
+
+        for stud_task in all_stud_tasks:
+            tasks_score[2] += stud_task["grade"] * tasks[stud_task["taskid"]].get_grading_weight()
+
+        course_grade = round(tasks_score[0] / tasks_score[1]) if tasks_score[1] > 0 else 0
+        all_stud_course_grade = round(tasks_score[2] / (nstud*tasks_score[1])) if tasks_score[1] > 0 else 0
+
+        return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/").autoevaluation_index(course,course_grade,all_stud_course_grade)
 
 
 def init(plugin_manager, _, _2, config):

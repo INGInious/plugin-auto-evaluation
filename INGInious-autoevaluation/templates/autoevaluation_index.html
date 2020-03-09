@@ -1,6 +1,7 @@
-$def with(course,personnal_grade,all_grade)
+$def with(course,personnal_grade,all_grade,success_per_task,task_ids)
 $var title: AutoEvaluation
-
+$var header:
+    <script src="$get_homepath(True)/static/js/libs/chart.min.js"></script>
 $var Column: $:template_helper.call('course_menu',course=course)
 
 $#
@@ -30,6 +31,69 @@ $var Navbar: $:NavbarF()
               <div class="progress-bar" style="width:$all_grade%"></div>
             </div>
         </div>
-        <div class="col-8">Grand </div>
+        <div class="col-8"><canvas id="myChart"></canvas></div>
     </div>
 </div>
+<div style="display: none">
+    $for elem in success_per_task:
+        <p id="$elem">$success_per_task[elem]</p>
+</div>
+
+<script>
+
+    let text = "$str(task_ids)";
+    let title_text = text.split(",");
+    let success = [title_text.length];
+    let i = 0;
+    while (i < title_text.length){
+        let task_id = title_text[i];
+        let value = $$("#" + task_id).text();
+        success[i] = parseInt(value);
+        i++;
+    }
+
+    var ctx = document.getElementById('myChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                datasets: [
+                    {
+                        label: "Viewed",
+                        backgroundColor: "blue",
+                        data: success
+                    },
+
+                ],
+                labels: title_text
+            },
+            options:{
+                responsive: true,
+                scales: {
+                    xAxes: [{
+                        id : 'x-axis-label',
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Tasks'
+                        },
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 90,
+                            minRotation: 90
+                        }
+                    }],
+                    yAxes: [{
+                      id : 'y-axis-label',
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: ' #Students'
+                        },
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                },
+            },
+        });
+</script>

@@ -18,7 +18,6 @@
 #   Auto-evaluation plugin for INGInious
 
 """ A plugin that allow students to autoevaluate their work """
-
 import os
 import web
 
@@ -54,14 +53,13 @@ class EvaluationBoardCourse(INGIniousAuthPage):
         course = self.course_factory.get_course(courseid)
         tasks = course.get_tasks()
         tasks_score = [0.0, 0.0, 0.0]
-
+        success_per_task = {}
         user_tasks = self.database.user_tasks.find(
             {"username": username, "courseid": course.get_id(), "taskid": {"$in": list(tasks.keys())}})
         list_stud = (self.user_manager.get_course_registered_users(course, False))
         nstud = len(list_stud)
         all_stud_tasks = self.database.user_tasks.find(
             {"username":{"$in":list_stud},"courseid": course.get_id(), "taskid": {"$in": list(tasks.keys())}})
-
         for taskid, task in tasks.items():
             tasks_score[1] += task.get_grading_weight()
 
@@ -70,12 +68,20 @@ class EvaluationBoardCourse(INGIniousAuthPage):
             tasks_score[0] += weighted_score
 
         for stud_task in all_stud_tasks:
+            if stud_task["grade"] == 100:
+                if stud_task["taskid"] in success_per_task:
+                    success_per_task[stud_task["taskid"]] +=1
+                else:
+                    success_per_task[stud_task["taskid"]] =1
             tasks_score[2] += stud_task["grade"] * tasks[stud_task["taskid"]].get_grading_weight()
-
         course_grade = round(tasks_score[0] / tasks_score[1]) if tasks_score[1] > 0 else 0
-        all_stud_course_grade = round(tasks_score[2] / (nstud*tasks_score[1])) if tasks_score[1] > 0 else 0
-
-        return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/").autoevaluation_index(course,course_grade,all_stud_course_grade)
+        all_stud_course_grade = round(tasks_score[2] / (nstud*tasks_score[1])) if tasks_score[1] > 0 and nstud > 0 else 0
+        task_ids = str(",".join(success_per_task.keys()))
+        return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/").autoevaluation_index(course,
+                                                                                                             course_grade,
+                                                                                                             all_stud_course_grade,
+                                                                                                             success_per_task,
+                                                                                                             task_ids)
 
 
 def init(plugin_manager, _, _2, config):

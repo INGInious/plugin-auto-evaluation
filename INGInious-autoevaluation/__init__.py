@@ -18,6 +18,7 @@
 #   Auto-evaluation plugin for INGInious
 
 """ A plugin that allow students to autoevaluate their work """
+import json
 import os
 import web
 
@@ -60,6 +61,10 @@ class EvaluationBoardCourse(INGIniousAuthPage):
         nstud = len(list_stud)
         all_stud_tasks = self.database.user_tasks.find(
             {"username":{"$in":list_stud},"courseid": course.get_id(), "taskid": {"$in": list(tasks.keys())}})
+        completed_taskids_current_user= list(self.database.user_tasks.find(
+            {"username":username,"courseid": course.get_id(), "grade": 100,
+             "taskid": {"$in": list(tasks.keys())}},{"taskid": 1, "_id": 0}))
+        completed_taskids_current_user = [dic_value['taskid'] for dic_value in completed_taskids_current_user]
         for taskid, task in tasks.items():
             tasks_score[1] += task.get_grading_weight()
 
@@ -74,6 +79,11 @@ class EvaluationBoardCourse(INGIniousAuthPage):
                 else:
                     success_per_task[stud_task["taskid"]] =1
             tasks_score[2] += stud_task["grade"] * tasks[stud_task["taskid"]].get_grading_weight()
+        tasks_not_solved = []
+        sorted_succes_per_task = {k: v for k, v in sorted(success_per_task.items(), key=lambda item: item[1])}
+        for key in sorted_succes_per_task:
+            if key not in completed_taskids_current_user:
+                tasks_not_solved.append(key)
         course_grade = round(tasks_score[0] / tasks_score[1]) if tasks_score[1] > 0 else 0
         all_stud_course_grade = round(tasks_score[2] / (nstud*tasks_score[1])) if tasks_score[1] > 0 and nstud > 0 else 0
         task_ids = str(",".join(success_per_task.keys()))
@@ -81,7 +91,8 @@ class EvaluationBoardCourse(INGIniousAuthPage):
                                                                                                              course_grade,
                                                                                                              all_stud_course_grade,
                                                                                                              success_per_task,
-                                                                                                             task_ids)
+                                                                                                             task_ids,
+                                                                                                             tasks_not_solved[:5])
 
 
 def init(plugin_manager, _, _2, config):

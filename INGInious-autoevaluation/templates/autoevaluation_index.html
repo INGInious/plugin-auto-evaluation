@@ -18,30 +18,30 @@ $def NavbarF():
     </nav>
 $var Navbar: $:NavbarF()
 
-<h1>AutoEvaluation - Overview</h1>
+<h1>$:_("AutoEvaluation - Overview")</h1>
 <div class="container-fluid">
     <div class="row">
         <div class="col-5">
-            <h2>Statistics</h2>
-            <p>Personnal Mean: $personnal_grade %</p>
+            <h2>$:_("Statistics")</h2>
+            <p>$:_("Personnal Mean"): $personnal_grade %</p>
             <div class="progress">
               <div class="progress-bar" style="width:$personnal_grade%"></div>
             </div>
-            <p>All Students Mean : $all_grade %</p>
+            <p>$:_("All Students Mean") : $all_grade %</p>
             <div class="progress">
               <div class="progress-bar" style="width:$all_grade%"></div>
             </div>
         </div>
         <div class="col-7">
-            <h2>Success per Task</h2>
+            <h2>$:_("Success per Task")</h2>
             <canvas id="myChart"></canvas>
         </div>
     </div>
     <div class="row">
 
         <div class="col-6">
-            <h2>Exercice ideas</h2>
-            <p>Those exercices have been succeeded by a high rate of students but not you...</p>
+            <h2>$:_("Exercice ideas")</h2>
+            <p>$:_("Those exercices have been succeeded by a high rate of students but not you...")</p>
             <div id="tasks-list" class="list-group list-group-flush">
                 $for taskid in tasks_not_resolved:
                     <a href="$get_homepath()/course/$course.get_id()/$taskid" class="list-group-item list-group-item-action">

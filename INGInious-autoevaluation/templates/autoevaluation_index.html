@@ -1,4 +1,4 @@
-$def with(course,personnal_grade,all_grade,success_per_task,task_ids,tasks_not_resolved)
+$def with(course,personnal_grade,all_grade,success_per_task,task_ids,tasks_not_resolved,task_names)
 $var title: AutoEvaluation
 $var header:
     <script src="$get_homepath(True)/static/js/libs/chart.min.js"></script>
@@ -21,7 +21,7 @@ $var Navbar: $:NavbarF()
 <h1>AutoEvaluation - Overview</h1>
 <div class="container-fluid">
     <div class="row">
-        <div class="col-4">
+        <div class="col-5">
             <h2>Statistics</h2>
             <p>Personnal Mean: $personnal_grade %</p>
             <div class="progress">
@@ -32,7 +32,10 @@ $var Navbar: $:NavbarF()
               <div class="progress-bar" style="width:$all_grade%"></div>
             </div>
         </div>
-        <div class="col-8"><canvas id="myChart"></canvas></div>
+        <div class="col-7">
+            <h2>Success per Task</h2>
+            <canvas id="myChart"></canvas>
+        </div>
     </div>
     <div class="row">
 
@@ -42,7 +45,7 @@ $var Navbar: $:NavbarF()
             <div id="tasks-list" class="list-group list-group-flush">
                 $for taskid in tasks_not_resolved:
                     <a href="$get_homepath()/course/$course.get_id()/$taskid" class="list-group-item list-group-item-action">
-                        $taskid
+                        $task_names[taskid]
                     </a>
             </div>
         </div>
@@ -52,15 +55,19 @@ $var Navbar: $:NavbarF()
 <div style="display: none">
     $for elem in success_per_task:
         <p id="$elem">$success_per_task[elem]</p>
+    $for taskid in task_names:
+        <p data-task_id="$taskid">$task_names[taskid]</p>
 </div>
 
 <script>
 
     let text = "$str(task_ids)";
     let title_text = text.split(",");
+    let label_names = new Array(title_text.length);
     let success = [title_text.length];
     let i = 0;
     while (i < title_text.length){
+        label_names[i] = $$("p[data-task_id="+title_text[i]+"]").text();
         let task_id = title_text[i];
         let value = $$("#" + task_id).text();
         success[i] = parseInt(value);
@@ -79,7 +86,7 @@ $var Navbar: $:NavbarF()
                     },
 
                 ],
-                labels: title_text
+                labels: label_names
             },
             options:{
                 responsive: true,

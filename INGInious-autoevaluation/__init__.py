@@ -49,50 +49,59 @@ class StaticMockPage(object):
 
 class EvaluationBoardCourse(INGIniousAuthPage):
     def GET_AUTH(self, courseid):
-
-        username = self.user_manager.session_username()
+        cu_username = self.user_manager.session_username()
         course = self.course_factory.get_course(courseid)
         tasks = course.get_tasks()
+        task_names = {}
         tasks_score = [0.0, 0.0, 0.0]
-        success_per_task = {}
+        completeness_per_task = {}
         user_tasks = self.database.user_tasks.find(
-            {"username": username, "courseid": course.get_id(), "taskid": {"$in": list(tasks.keys())}})
-        list_stud = (self.user_manager.get_course_registered_users(course, False))
-        nstud = len(list_stud)
-        all_stud_tasks = self.database.user_tasks.find(
-            {"username":{"$in":list_stud},"courseid": course.get_id(), "taskid": {"$in": list(tasks.keys())}})
-        completed_taskids_current_user= list(self.database.user_tasks.find(
-            {"username":username,"courseid": course.get_id(), "grade": 100,
-             "taskid": {"$in": list(tasks.keys())}},{"taskid": 1, "_id": 0}))
+            {"username": cu_username, "courseid": course.get_id(), "taskid": {"$in": list(tasks.keys())}})
+        registered_students = (self.user_manager.get_course_registered_users(course, False))
+        count_registered_students = len(registered_students)
+        all_students_user_tasks = self.database.user_tasks.find(
+            {"username": {"$in": registered_students}, "courseid": course.get_id(),
+             "taskid": {"$in": list(tasks.keys())}})
+        completed_taskids_current_user = list(self.database.user_tasks.find(
+            {"username": cu_username, "courseid": course.get_id(), "grade": 100,
+             "taskid": {"$in": list(tasks.keys())}}, {"taskid": 1, "_id": 0}))
         completed_taskids_current_user = [dic_value['taskid'] for dic_value in completed_taskids_current_user]
+
         for taskid, task in tasks.items():
             tasks_score[1] += task.get_grading_weight()
-
+            task_names[taskid] = task.get_name(self.user_manager.session_language())
         for user_task in user_tasks:
             weighted_score = user_task["grade"] * tasks[user_task["taskid"]].get_grading_weight()
             tasks_score[0] += weighted_score
 
-        for stud_task in all_stud_tasks:
-            if stud_task["grade"] == 100:
-                if stud_task["taskid"] in success_per_task:
-                    success_per_task[stud_task["taskid"]] +=1
+        for user_task in all_students_user_tasks:
+            if user_task["grade"] == 100:
+                if user_task["taskid"] in completeness_per_task:
+                    completeness_per_task[user_task["taskid"]] += 1
                 else:
-                    success_per_task[stud_task["taskid"]] =1
-            tasks_score[2] += stud_task["grade"] * tasks[stud_task["taskid"]].get_grading_weight()
-        tasks_not_solved = []
-        sorted_succes_per_task = {k: v for k, v in sorted(success_per_task.items(), key=lambda item: item[1])}
-        for key in sorted_succes_per_task:
+                    completeness_per_task[user_task["taskid"]] = 1
+            tasks_score[2] += user_task["grade"] * tasks[user_task["taskid"]].get_grading_weight()
+
+        cu_not_resolved_taskids = []
+        sorted_completeness_per_task = {k: v for k, v in
+                                        sorted(completeness_per_task.items(), key=lambda item: item[1])}
+
+        for key in sorted_completeness_per_task:
             if key not in completed_taskids_current_user:
-                tasks_not_solved.append(key)
-        course_grade = round(tasks_score[0] / tasks_score[1]) if tasks_score[1] > 0 else 0
-        all_stud_course_grade = round(tasks_score[2] / (nstud*tasks_score[1])) if tasks_score[1] > 0 and nstud > 0 else 0
-        task_ids = str(",".join(success_per_task.keys()))
-        return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/").autoevaluation_index(course,
-                                                                                                             course_grade,
-                                                                                                             all_stud_course_grade,
-                                                                                                             success_per_task,
-                                                                                                             task_ids,
-                                                                                                             tasks_not_solved[:5])
+                cu_not_resolved_taskids.append(key)
+
+        cu_course_mean = round(tasks_score[0] / tasks_score[1]) if tasks_score[1] > 0 else 0
+        all_stud_course_mean = round(tasks_score[2] / (count_registered_students * tasks_score[1])) \
+            if tasks_score[1] > 0 and count_registered_students > 0 else 0
+
+        return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/") \
+            .autoevaluation_index(course,
+                                  cu_course_mean,
+                                  all_stud_course_mean,
+                                  completeness_per_task,
+                                  str(",".join(list(tasks.keys()))),
+                                  cu_not_resolved_taskids[:5],
+                                  task_names)
 
 
 def init(plugin_manager, _, _2, config):

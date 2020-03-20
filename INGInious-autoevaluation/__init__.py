@@ -84,7 +84,7 @@ class EvaluationBoardCourse(INGIniousAuthPage):
 
         cu_not_resolved_taskids = []
         sorted_completeness_per_task = {k: v for k, v in
-                                        sorted(completeness_per_task.items(), key=lambda item: item[1])}
+                                        sorted(completeness_per_task.items(), reverse=True, key=lambda item: item[1])}
 
         for key in sorted_completeness_per_task:
             if key not in completed_taskids_current_user:

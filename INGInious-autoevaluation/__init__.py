@@ -21,6 +21,7 @@
 import json
 import os
 import web
+from math import ceil, floor
 
 from inginious.frontend.pages.utils import INGIniousAuthPage
 
@@ -73,6 +74,22 @@ class EvaluationBoardCourse(INGIniousAuthPage):
         for user_task in user_tasks:
             weighted_score = user_task["grade"] * tasks[user_task["taskid"]].get_grading_weight()
             tasks_score[0] += weighted_score
+        users_info = self.user_manager.get_course_caches(None, course)
+        means = sorted([value["grade"] for key, value in users_info.items()])
+        best_mean = max(means)
+        median = 0
+        size_means = len(means)
+        if size_means % 2 == 0:
+            # pair
+            floor_i = size_means/2
+            ceil_i = floor_i+1
+            floor_val = means[int(floor_i-1)]
+            ceil_val = means[int(ceil_i-1)]
+            median = (floor_val + ceil_val) / 2
+        else:
+            # impair
+            i = (size_means + 1) / 2
+            median = means[int(i-1)]
 
         for user_task in all_students_user_tasks:
             if user_task["grade"] == 100:
@@ -84,12 +101,11 @@ class EvaluationBoardCourse(INGIniousAuthPage):
 
         cu_not_resolved_taskids = []
         sorted_completeness_per_task = {k: v for k, v in
-                                        sorted(completeness_per_task.items(), key=lambda item: item[1])}
+                                        sorted(completeness_per_task.items(), reverse=True, key=lambda item: item[1])}
 
         for key in sorted_completeness_per_task:
             if key not in completed_taskids_current_user:
                 cu_not_resolved_taskids.append(key)
-
         cu_course_mean = round(tasks_score[0] / tasks_score[1]) if tasks_score[1] > 0 else 0
         all_stud_course_mean = round(tasks_score[2] / (count_registered_students * tasks_score[1])) \
             if tasks_score[1] > 0 and count_registered_students > 0 else 0
@@ -101,7 +117,9 @@ class EvaluationBoardCourse(INGIniousAuthPage):
                                   completeness_per_task,
                                   str(",".join(list(tasks.keys()))),
                                   cu_not_resolved_taskids[:5],
-                                  task_names)
+                                  task_names,
+                                  best_mean,
+                                  median)
 
 
 def init(plugin_manager, _, _2, config):

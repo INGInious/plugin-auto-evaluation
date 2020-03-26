@@ -107,6 +107,8 @@ class EvaluationBoardCourse(INGIniousAuthPage):
             if key not in completed_taskids_current_user:
                 cu_not_resolved_taskids.append(key)
         cu_course_mean = round(tasks_score[0] / tasks_score[1]) if tasks_score[1] > 0 else 0
+        ranking = size_means - means.index(cu_course_mean)
+        ranking = str(ranking)+"/"+str(size_means)
         all_stud_course_mean = round(tasks_score[2] / (count_registered_students * tasks_score[1])) \
             if tasks_score[1] > 0 and count_registered_students > 0 else 0
 
@@ -119,7 +121,8 @@ class EvaluationBoardCourse(INGIniousAuthPage):
                                   cu_not_resolved_taskids[:5],
                                   task_names,
                                   best_mean,
-                                  median)
+                                  median,
+                                  ranking)
 
 
 def init(plugin_manager, _, _2, config):

@@ -1,4 +1,4 @@
-$def with(course,personnal_grade,all_grade,success_per_task,task_ids,tasks_not_resolved,task_names,best_mean,median)
+$def with(course,personnal_grade,all_grade,success_per_task,task_ids,tasks_not_resolved,task_names,best_mean,median,ranking)
 $var title: AutoEvaluation
 $var header:
     <script src="$get_homepath(True)/static/js/libs/chart.min.js"></script>
@@ -21,7 +21,7 @@ $var Navbar: $:NavbarF()
 <h1>$:_("AutoEvaluation - Overview")</h1>
 <div class="container-fluid">
     <div class="row">
-        <div class="col-5">
+        <div class="col-4">
             <h2>$:_("Statistics")</h2>
             <p>$:_("Personnal Mean"): $personnal_grade %</p>
             <div class="progress">
@@ -40,9 +40,13 @@ $var Navbar: $:NavbarF()
               <div class="progress-bar" style="width:$median%"></div>
             </div>
         </div>
-        <div class="col-7">
+        <div class="col-6">
             <h2>$:_("Success per Task")</h2>
             <canvas id="myChart"></canvas>
+        </div>
+        <div class="col-2">
+            <h2>$:_("Ranking") <i class="fa fa-trophy"></i></h2>
+            <p>$:_("You're") <i>$ranking</i></p>
         </div>
     </div>
     <div class="row">

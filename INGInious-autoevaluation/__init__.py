@@ -49,7 +49,14 @@ class StaticMockPage(object):
 
 
 class EvaluationBoardCourse(INGIniousAuthPage):
+
     def GET_AUTH(self, courseid):
+
+        def _take(n, iterable):
+            from itertools import islice
+            "Return first n items of the iterable as a list"
+            return list(islice(iterable, n))
+
         cu_username = self.user_manager.session_username()
         course = self.course_factory.get_course(courseid)
         tasks = course.get_tasks()
@@ -81,15 +88,21 @@ class EvaluationBoardCourse(INGIniousAuthPage):
         size_means = len(means)
         if size_means % 2 == 0:
             # pair
-            floor_i = size_means/2
-            ceil_i = floor_i+1
-            floor_val = means[int(floor_i-1)]
-            ceil_val = means[int(ceil_i-1)]
+            floor_i = size_means / 2
+            ceil_i = floor_i + 1
+            floor_val = means[int(floor_i - 1)]
+            ceil_val = means[int(ceil_i - 1)]
             median = (floor_val + ceil_val) / 2
         else:
             # impair
             i = (size_means + 1) / 2
-            median = means[int(i-1)]
+            median = means[int(i - 1)]
+
+        cu_not_resolved_taskids = {}
+        sorted_completeness_per_task = {k: v for k, v in
+                                        sorted(completeness_per_task.items(), reverse=True, key=lambda item: item[1])}
+
+
 
         for user_task in all_students_user_tasks:
             if user_task["grade"] == 100:
@@ -98,17 +111,19 @@ class EvaluationBoardCourse(INGIniousAuthPage):
                 else:
                     completeness_per_task[user_task["taskid"]] = 1
             tasks_score[2] += user_task["grade"] * tasks[user_task["taskid"]].get_grading_weight()
+            if user_task["taskid"] not in completed_taskids_current_user:
+                if user_task["taskid"] not in cu_not_resolved_taskids:
+                    cu_not_resolved_taskids[user_task["taskid"]] = user_task["grade"] * tasks[
+                    user_task["taskid"]].get_grading_weight()
+                else:
+                    cu_not_resolved_taskids[user_task["taskid"]] += user_task["grade"] * tasks[
+                        user_task["taskid"]].get_grading_weight()
+        for elem in cu_not_resolved_taskids:
+            cu_not_resolved_taskids[elem] = cu_not_resolved_taskids[elem] / len(users_info)
 
-        cu_not_resolved_taskids = []
-        sorted_completeness_per_task = {k: v for k, v in
-                                        sorted(completeness_per_task.items(), reverse=True, key=lambda item: item[1])}
-
-        for key in sorted_completeness_per_task:
-            if key not in completed_taskids_current_user:
-                cu_not_resolved_taskids.append(key)
         cu_course_mean = round(tasks_score[0] / tasks_score[1]) if tasks_score[1] > 0 else 0
         ranking = size_means - means.index(cu_course_mean)
-        ranking = str(ranking)+"/"+str(size_means)
+        ranking = str(ranking) + "/" + str(size_means)
         all_stud_course_mean = round(tasks_score[2] / (count_registered_students * tasks_score[1])) \
             if tasks_score[1] > 0 and count_registered_students > 0 else 0
 
@@ -118,7 +133,7 @@ class EvaluationBoardCourse(INGIniousAuthPage):
                                   all_stud_course_mean,
                                   completeness_per_task,
                                   str(",".join(list(tasks.keys()))),
-                                  cu_not_resolved_taskids[:5],
+                                  _take(5, cu_not_resolved_taskids.items()),
                                   task_names,
                                   best_mean,
                                   median,

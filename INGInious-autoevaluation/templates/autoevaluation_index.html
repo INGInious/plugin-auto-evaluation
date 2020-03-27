@@ -55,9 +55,9 @@ $var Navbar: $:NavbarF()
             <h2>$:_("Exercice ideas")</h2>
             <p>$:_("Those exercices have been succeeded by a high rate of students but not you...")</p>
             <div id="tasks-list" class="list-group list-group-flush">
-                $for taskid in tasks_not_resolved:
+                $for taskid,mean in tasks_not_resolved:
                     <a href="$get_homepath()/course/$course.get_id()/$taskid" class="list-group-item list-group-item-action">
-                        $task_names[taskid]
+                        $task_names[taskid]  - $mean %
                     </a>
             </div>
         </div>

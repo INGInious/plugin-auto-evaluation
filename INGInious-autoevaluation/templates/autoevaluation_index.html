@@ -1,87 +1,95 @@
-$def with(course,personnal_grade,all_grade,success_per_task,task_ids,tasks_not_resolved,task_names,best_mean,median,ranking)
-$var title: AutoEvaluation
-$var header:
-    <script src="$get_homepath(True)/static/js/libs/chart.min.js"></script>
-$var Column: $:template_helper.call('course_menu',course=course)
+{# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
+{# more information about the licensing of this file. #}
 
-$#
-$# This file is part of AutoEvaluation plugin. See the LICENSE and the COPYRIGHTS files for
-$# more information about the licensing of this file.
-$#
+{% extends "layout.html" %}
 
-$def NavbarF():
+{% block title %} AutoEvaluation {% endblock %}
+{% block head %}
+    {{ super() }}
+    <script src="{{ get_homepath(True) }}/static/js/libs/chart.min.js"></script>
+{% endblock %}
+
+{% block column %}
+{{ template_helper.call('course_menu',course=course,template_helper=template_helper) | safe }}
+{% endblock %}}
+
+{% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="$get_homepath()/course/$course.get_id()">$course.get_name(user_manager.session_language())</a></li>
+            <li class="breadcrumb-item"><a href="{{get_homepath()}}/course/{{course.get_id()}}">{{course.get_name(user_manager.session_language())}}</a></li>
             <li class="breadcrumb-item active"><a href="#"><i class="fa fa-rocket"></i> Evaluation <span class="sr-only">(current)</span></a></li>
         </ol>
     </nav>
-$var Navbar: $:NavbarF()
+{% endblock %}
 
-<h1>$:_("AutoEvaluation - Overview")</h1>
+{% block content %}
+<h2>{{_("AutoEvaluation - Overview")}}</h2>
 <div class="container-fluid">
     <div class="row">
         <div class="col-4">
-            <h2>$:_("Statistics")</h2>
-            <p>$:_("Personnal Mean"): $personnal_grade %</p>
+            <h2>{{_("Statistics")}}</h2>
+            <p>{{_("Personnal Mean")}} : {{personnal_grade}} %</p>
             <div class="progress">
-              <div class="progress-bar" style="width:$personnal_grade%"></div>
+              <div class="progress-bar" style="width:{{personnal_grade}}%"></div>
             </div>
-            <p>$:_("All Students Mean") : $all_grade %</p>
+            <p>{{_("All Students Mean")}} : {{all_grade}} %</p>
             <div class="progress">
-              <div class="progress-bar" style="width:$all_grade%"></div>
+              <div class="progress-bar" style="width:{{all_grade}}%"></div>
             </div>
-            <p>$:_("Best Mean") : $best_mean %</p>
+            <p>{{_("Best Mean")}} : {{best_mean}} %</p>
             <div class="progress">
-              <div class="progress-bar" style="width:$best_mean%"></div>
+              <div class="progress-bar" style="width:{{best_mean}}%"></div>
             </div>
-            <p>$:_("Median") : $median %</p>
+            <p>{{_("Median")}} : {{median}} %</p>
             <div class="progress">
-              <div class="progress-bar" style="width:$median%"></div>
+              <div class="progress-bar" style="width:{{median}}%"></div>
             </div>
         </div>
         <div class="col-6">
-            <h2>$:_("Success per Task")</h2>
+            <h2>{{_("Success per Task")}}</h2>
             <canvas id="myChart"></canvas>
         </div>
         <div class="col-2">
-            <h2>$:_("Ranking") <i class="fa fa-trophy"></i></h2>
-            <p>$:_("You're") <i>$ranking</i></p>
+            <h2>{{_("Ranking")}} <i class="fa fa-trophy"></i></h2>
+            <p>{{_("You're")}} <i>{{ranking}}</i></p>
         </div>
     </div>
     <div class="row">
 
         <div class="col-6">
-            <h2>$:_("Exercice ideas")</h2>
-            <p>$:_("Those exercices have been succeeded by a high rate of students but not you...")</p>
+            <h2>{{_("Exercice ideas")}}</h2>
+            <p>{{_("Those exercices have been succeeded by a high rate of students but not you...")}}</p>
             <div id="tasks-list" class="list-group list-group-flush">
-                $for taskid,mean in tasks_not_resolved:
-                    <a href="$get_homepath()/course/$course.get_id()/$taskid" class="list-group-item list-group-item-action">
-                        $task_names[taskid]  - $mean %
+                {% for taskid,mean in tasks_not_resolved %}
+                    <a href="{{get_homepath()}}/course/{course.get_id(){}/{{taskid}}" class="list-group-item list-group-item-action">
+                        {{task_names[taskid]}}  - {{mean}} %
                     </a>
+                {% endfor %}
             </div>
         </div>
         <div class="col-6"></div>
     </div>
 </div>
 <div style="display: none">
-    $for elem in success_per_task:
-        <p id="$elem">$success_per_task[elem]</p>
-    $for taskid in task_names:
-        <p data-task_id="$taskid">$task_names[taskid]</p>
+    {% for elem in success_per_task %}
+        <p id="{{elem}}">{{success_per_task[elem]}}</p>
+    {% endfor %}
+    {% for taskid in task_names %}
+        <p data-task_id="{{taskid}}">{{task_names[taskid]}}</p>
+    {% endfor %}
 </div>
 
 <script>
 
-    let text = "$str(task_ids)";
+    let text = "{{ task_ids | string}}";
     let title_text = text.split(",");
     let label_names = new Array(title_text.length);
     let success = [title_text.length];
     let i = 0;
     while (i < title_text.length){
-        label_names[i] = $$("p[data-task_id="+title_text[i]+"]").text();
+        label_names[i] = $("p[data-task_id="+title_text[i]+"]").text();
         let task_id = title_text[i];
-        let value = $$("#" + task_id).text();
+        let value = $("#" + task_id).text();
         success[i] = parseInt(value);
         i++;
     }
@@ -131,3 +139,4 @@ $var Navbar: $:NavbarF()
             },
         });
 </script>
+{% endblock %}

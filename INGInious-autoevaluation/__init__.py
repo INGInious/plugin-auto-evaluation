@@ -20,29 +20,22 @@
 """ A plugin that allow students to autoevaluate their work """
 import json
 import os
-import web
 from math import ceil, floor
 
-from inginious.frontend.pages.utils import INGIniousAuthPage
+from flask import send_from_directory
+from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 
 PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
 
 def course_menu(course, template_helper):
     """ Displays the link to the board on the course page, if the plugin is activated for this course """
-    return str(template_helper.get_custom_renderer(PATH_TO_PLUGIN + '/templates/', layout=False).course_menu(course))
+    return template_helper.render("course_menu.html", template_folder=PATH_TO_PLUGIN + '/templates/', course=course)
 
 
-class StaticMockPage(object):
+class StaticMockPage(INGIniousPage):
     def GET(self, path):
-        if not os.path.abspath(PATH_TO_PLUGIN) in os.path.abspath(os.path.join(PATH_TO_PLUGIN, path)):
-            raise web.notfound()
-
-        try:
-            with open(os.path.join(PATH_TO_PLUGIN, "static", path), 'rb') as file:
-                return file.read()
-        except:
-            raise web.notfound()
+        return send_from_directory(os.path.join(PATH_TO_PLUGIN, "static"), path)
 
     def POST(self, path):
         return self.GET(path)
@@ -127,22 +120,15 @@ class EvaluationBoardCourse(INGIniousAuthPage):
         all_stud_course_mean = round(tasks_score[2] / (count_registered_students * tasks_score[1])) \
             if tasks_score[1] > 0 and count_registered_students > 0 else 0
 
-        return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/") \
-            .autoevaluation_index(course,
-                                  cu_course_mean,
-                                  all_stud_course_mean,
-                                  completeness_per_task,
-                                  str(",".join(list(tasks.keys()))),
-                                  _take(5, cu_not_resolved_taskids.items()),
-                                  task_names,
-                                  best_mean,
-                                  median,
-                                  ranking)
+        return self.template_helper.render("autoevaluation_index.html", template_folder=PATH_TO_PLUGIN + "/templates/",
+                                           course=course, personnal_grade=cu_course_mean, all_grade=all_stud_course_mean,
+                                           success_per_task=completeness_per_task, task_ids=str(",".join(list(tasks.keys()))),
+                                           tasks_not_resolved=_take(5, cu_not_resolved_taskids.items()),
+                                           task_names=task_names, best_mean=best_mean, median=median, ranking=ranking)
 
 
 def init(plugin_manager, _, _2, config):
     """ Init the plugin """
-    page_pattern_course = r'/evaluation/([a-z0-9A-Z\-_]+)'
-    plugin_manager.add_page(page_pattern_course, EvaluationBoardCourse)
-    plugin_manager.add_page('/plugins/evaluation/static/(.+)', StaticMockPage)
+    plugin_manager.add_page('/evaluation/<courseid>', EvaluationBoardCourse.as_view("evaluationboardcoursepage"))
+    plugin_manager.add_page('/plugins/evaluation/static/<path:path>', StaticMockPage)
     plugin_manager.add_hook('course_menu', course_menu)

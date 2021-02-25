@@ -115,7 +115,11 @@ class EvaluationBoardCourse(INGIniousAuthPage):
             cu_not_resolved_taskids[elem] = cu_not_resolved_taskids[elem] / len(users_info)
 
         cu_course_mean = round(tasks_score[0] / tasks_score[1]) if tasks_score[1] > 0 else 0
-        ranking = size_means - means.index(cu_course_mean)
+        try:
+            index = means.index(cu_course_mean)
+        except ValueError:
+            index = 0
+        ranking = size_means - index
         ranking = str(ranking) + "/" + str(size_means)
         all_stud_course_mean = round(tasks_score[2] / (count_registered_students * tasks_score[1])) \
             if tasks_score[1] > 0 and count_registered_students > 0 else 0
